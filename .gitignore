@@ -25,6 +25,9 @@ web_sentinels-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 
+# Ignore sentinels config
+/config/sentinels.yml
+
 # Ignore Working files
 OLD.*
 ORIG.*

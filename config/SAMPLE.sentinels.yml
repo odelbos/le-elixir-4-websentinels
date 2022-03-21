@@ -1,0 +1,17 @@
+#
+# Sentinels settings
+#
+- url: https://my-website-1.com      # url to ping
+  every: 1mn                         # request every 1 minute
+  expects:
+    status: 200                      # expected status code
+
+- url: https://my-website-2.com
+  every: 2h
+  expects:
+    status: 200
+
+- url: https://my-website-3.com
+  every: 5mn
+  expects:
+    status: 401
