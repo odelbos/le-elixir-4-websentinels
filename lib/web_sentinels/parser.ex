@@ -66,6 +66,16 @@ defmodule WebSentinels.Parser do
 
   # -----
 
+  defp parse_expects(%{"status"=>status, "max_duration"=>duration} = _expects)
+            when is_integer(status) and is_integer(duration) do
+    %{status: status, max_duration: duration}
+  end
+
+  defp parse_expects(%{"max_duration"=>duration} = _expects)
+            when not is_integer(duration) do
+    halt_with_max_duration_info()
+  end
+
   defp parse_expects(%{"status"=>status} = _expects) when is_integer(status) do
     %{status: status}
   end
@@ -101,6 +111,14 @@ defmodule WebSentinels.Parser do
     header "Error, missing or bad 'status'", :red
     nl()
     IO.puts "> 'status' is required and must be an integer"
+    nl()
+    System.halt 1
+  end
+
+  defp halt_with_max_duration_info() do
+    header "Error, bad 'max_duration' type", :red
+    nl()
+    IO.puts "> 'max_duration' must be an integer"
     nl()
     System.halt 1
   end

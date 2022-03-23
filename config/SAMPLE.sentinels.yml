@@ -1,17 +1,19 @@
 #
 # Sentinels settings
 #
-- url: https://my-website-1.com      # url to ping
-  every: 1mn                         # request every 1 minute
+- url: https://my-website-1.com      # Url to ping
+  every: 1mn                         # Request every 1 minute. (required)
   expects:
-    status: 200                      # expected status code
+    status: 200                      # Expected status code. (required)
+    max_duration: 2000               # Maxixum duration of the http request time
 
 - url: https://my-website-2.com
   every: 2h
   expects:
     status: 200
+    max_duration: 1000
 
-- url: https://my-website-3.com
+- url: https://my-website-3.com      # Minimal settings for a sentinel
   every: 5mn
   expects:
     status: 401
