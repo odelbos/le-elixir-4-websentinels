@@ -1,5 +1,6 @@
 defmodule WebSentinels.Worker do
   require Logger
+  require Timer
   use GenServer
   alias WebSentinels.Expectations
 
@@ -30,7 +31,9 @@ defmodule WebSentinels.Worker do
     Logger.debug "Run: #{worker_name state}, url: #{url}"
 
     opts = [timeout: 5000, recv_timeout: 5000, follow_redirect: false]
-    response = HTTPoison.get url, [], opts
+    duration = Timer.duration :millisecond do
+      response = HTTPoison.get url, [], opts
+    end
 
     case response do
       {:ok, %HTTPoison.Response{body: body, status_code: status, headers: headers}} ->
@@ -38,12 +41,12 @@ defmodule WebSentinels.Worker do
           Expectations.validates state[:expects], status, body, headers
 
         if length(errors) == 0 do
-          Logger.info "#{worker_name state}: ok, url: #{url}"
+          Logger.info "#{worker_name state}: ok, #{duration}ms, url: #{url}"
           #
           # TODO : log success
           #
         else
-          Logger.info "#{worker_name state}: expectations failed, url: #{url}"
+          Logger.info "#{worker_name state}: expectations failed, #{duration}ms, url: #{url}"
           IO.inspect errors
           #
           # TODO : Send Pushover alert
