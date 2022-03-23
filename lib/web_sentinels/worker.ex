@@ -28,8 +28,6 @@ defmodule WebSentinels.Worker do
 
   @impl true
   def handle_info(:run, %{url: url} = state) do
-    Logger.debug "Run: #{worker_name state}, url: #{url}"
-
     opts = [timeout: 5000, recv_timeout: 5000, follow_redirect: false]
     duration = Timer.duration :millisecond do
       response = HTTPoison.get url, [], opts
@@ -38,7 +36,7 @@ defmodule WebSentinels.Worker do
     case response do
       {:ok, %HTTPoison.Response{body: body, status_code: status, headers: headers}} ->
         errors =
-          Expectations.validates state[:expects], status, body, headers
+          Expectations.validates state[:expects], duration, status, body, headers
 
         if length(errors) == 0 do
           Logger.info "#{worker_name state}: ok, #{duration}ms, url: #{url}"
@@ -54,12 +52,12 @@ defmodule WebSentinels.Worker do
         end
       {:error, %HTTPoison.Error{reason: reason}} ->
         # reason -> :nxdomain, :timeout
-        Logger.warn "#{worker_name state}: Error, #{reason}"
+        Logger.warn "#{worker_name state}: Error, #{reason}, url: #{url}"
         #
         # TODO : Send Pushover alert
         #
       _ ->
-        Logger.warn "#{worker_name state}: unknown error"
+        Logger.warn "#{worker_name state}: unknown error, url: #{url}"
         #
         # TODO : Send Pushover alert
         #
