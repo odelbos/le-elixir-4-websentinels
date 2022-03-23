@@ -73,11 +73,16 @@ defmodule WebSentinels.Parser do
 
   defp parse_expects(%{"max_duration"=>duration} = _expects)
             when not is_integer(duration) do
-    halt_with_max_duration_info()
+    halt_with_must_be_integer_info "max_duration"
   end
 
   defp parse_expects(%{"status"=>status} = _expects) when is_integer(status) do
     %{status: status}
+  end
+
+  defp parse_expects(%{"status"=>status} = _expects)
+  when not is_integer(status) do
+    halt_with_must_be_integer_info "status"
   end
 
   defp parse_expects(_expects), do: halt_with_expects_info()
@@ -115,10 +120,10 @@ defmodule WebSentinels.Parser do
     System.halt 1
   end
 
-  defp halt_with_max_duration_info() do
-    header "Error, bad 'max_duration' type", :red
+  defp halt_with_must_be_integer_info(name) do
+    header "Error, bad '#{name}' type", :red
     nl()
-    IO.puts "> 'max_duration' must be an integer"
+    IO.puts "> '#{name}' must be an integer"
     nl()
     System.halt 1
   end
