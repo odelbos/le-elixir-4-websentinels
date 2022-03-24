@@ -6,6 +6,10 @@
   expects:
     status: 200                      # Expected status code. (required)
     max_duration: 2000               # Maxixum duration of the http request time
+    length:                          # Body length rules
+      - { value: 500, op: ">" }           # must be > to 500
+      - { value: 1000, op: "<" }          # must be < to 1000
+      - { value: 2990, op: "=" }          # must be equals to 2990
 
 - url: https://my-website-2.com
   every: 2h
