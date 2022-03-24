@@ -6,6 +6,7 @@ defmodule WebSentinels.Expectations do
       |> validates_status(expects, status)
       |> validates_max_duration(expects, duration)
       |> validates_length(expects, String.length body)
+      |> validates_body(expects, body)
   end
 
   # ------
@@ -63,5 +64,45 @@ defmodule WebSentinels.Expectations do
     if body_length > value,
       do: errors,
       else: [%{rule: :length, expect: value, got: body_length, op: ">"} | errors]
+  end
+
+  # ------
+
+  defp validates_body(errors, %{body: body_rules}, body) do
+    validates_body errors, body_rules, body
+  end
+
+  defp validates_body(errors, [], _body), do: errors
+
+  defp validates_body(errors, [rule | rest], body) do
+    new_errors = validates_body_rule errors, rule, body
+    validates_body new_errors, rest, body
+  end
+
+  defp validates_body(errors, _rules, _body), do: errors
+
+  # --
+
+  defp validates_body_rule(errors, %{value: value, op: op}, body) do
+    validates_body_rule errors, value, op, body
+  end
+
+  defp validates_body_rule(errors, value, "=", body) do
+    if body == value,
+      do: errors,
+      else: [%{rule: :body, expect: value, op: "="} | errors]
+  end
+
+  defp validates_body_rule(errors, value, "c", body) do
+    if String.contains?(body, value),
+      do: errors,
+      else: [%{rule: :body, expect: value, op: "c"} | errors]
+  end
+
+  defp validates_body_rule(errors, value, "md5", body) do
+    md5 = :erlang.md5(body) |> Base.encode16(case: :lower)
+    if md5 == value,
+      do: errors,
+      else: [%{rule: :body, expect: value, got: md5, op: "md5"} | errors]
   end
 end
