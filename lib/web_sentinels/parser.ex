@@ -70,6 +70,7 @@ defmodule WebSentinels.Parser do
             when is_integer(status) and is_integer(duration) do
     %{status: status, max_duration: duration}
       |> parse_expects_length(expects)
+      |> parse_expects_body(expects)
   end
 
   defp parse_expects(%{"max_duration"=>duration} = _expects)
@@ -80,6 +81,7 @@ defmodule WebSentinels.Parser do
   defp parse_expects(%{"status"=>status} = expects) when is_integer(status) do
     %{status: status}
       |> parse_expects_length(expects)
+      |> parse_expects_body(expects)
   end
 
   defp parse_expects(%{"status"=>status} = _expects)
@@ -113,9 +115,37 @@ defmodule WebSentinels.Parser do
     end
   end
 
+  # -----
+
+  defp parse_expects_body(config, %{"body" => rules}) do
+    body_rules = parse_body_rules [], rules
+    Map.put config, :body, body_rules
+  end
+
+  defp parse_expects_body(config, _expects), do: config
+
+  # --
+
+  defp parse_body_rules(acc, []), do: Enum.reverse acc
+
+  defp parse_body_rules(acc, [rule | rest]) do
+    case rule do
+      %{"value"=>value, "op"=>op} ->
+        validates_string value, "body.value"
+        validates_in op, ["c", "=", "md5"], "body.op"
+        parse_body_rules [%{value: value, op: op} | acc], rest
+      _ ->
+        halt_with_body_info()
+    end
+  end
+
   # ------------------------------------------------------------
   # Helpers : validates functions
   # ------------------------------------------------------------
+  defp validates_string(value, name) do
+    unless is_binary(value), do: halt_with_must_be_string_info name
+  end
+
   defp validates_integer(value, name) do
     unless is_integer(value), do: halt_with_must_be_integer_info name
   end
@@ -164,6 +194,14 @@ defmodule WebSentinels.Parser do
     System.halt 1
   end
 
+  defp halt_with_must_be_string_info(name) do
+    header "Error, bad '#{name}' type", :red
+    nl()
+    IO.puts "> '#{name}' must be an string"
+    nl()
+    System.halt 1
+  end
+
   defp halt_with_must_be_integer_info(name) do
     header "Error, bad '#{name}' type", :red
     nl()
@@ -178,6 +216,16 @@ defmodule WebSentinels.Parser do
     IO.puts "> length rule must have a 'value' and 'op' attributes"
     IO.puts "> 'value' must be an integer"
     IO.puts "> 'op' must be one of : <, >, ="
+    nl()
+    System.halt 1
+  end
+
+  defp halt_with_body_info() do
+    header "Error, bad body rule", :red
+    nl()
+    IO.puts "> body rule must have a 'value' and 'op' attributes"
+    IO.puts "> 'value' must be a string"
+    IO.puts "> 'op' must be one of : c, =, md5"
     nl()
     System.halt 1
   end

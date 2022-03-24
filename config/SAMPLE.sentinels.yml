@@ -2,14 +2,18 @@
 # Sentinels settings
 #
 - url: https://my-website-1.com      # Url to ping
-  every: 1mn                         # Request every 1 minute. (required)
+  every: 1mn                         # Check every 1 minute. (required)
   expects:
     status: 200                      # Expected status code. (required)
-    max_duration: 2000               # Maxixum duration of the http request time
+    max_duration: 2000               # Maxixum duration of the http request
     length:                          # Body length rules
-      - { value: 500, op: ">" }           # must be > to 500
-      - { value: 1000, op: "<" }          # must be < to 1000
-      - { value: 2990, op: "=" }          # must be equals to 2990
+      - { value: 500, op: ">" }            # must be > to 500 bytes
+      - { value: 1000, op: "<" }           # must be < to 1000 bytes
+      - { value: 2990, op: "=" }           # must be equals to 2990 bytes
+    body:
+      - { value: "Hello", op: "c" }        # Body must contains 'Hello'
+      - { value: "ok", op: "=" }           # Body must be equals to 'ok'
+      - { value: "4a4...4be", op: "md5" }  # Md5 of body must be equals to 'value'
 
 - url: https://my-website-2.com
   every: 2h
