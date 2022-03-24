@@ -5,6 +5,7 @@ defmodule WebSentinels.Expectations do
     []
       |> validates_status(expects, status)
       |> validates_max_duration(expects, duration)
+      |> validates_length(expects, String.length body)
   end
 
   # ------
@@ -24,4 +25,43 @@ defmodule WebSentinels.Expectations do
   end
 
   defp validates_max_duration(errors, _expects, _duration), do: errors
+
+  # ------
+
+  defp validates_length(errors, %{length: length_rules}, body_length) do
+    validates_length errors, length_rules, body_length
+  end
+
+  defp validates_length(errors, [], _body_length), do: errors
+
+  defp validates_length(errors, [rule | rest], body_length) do
+    new_errors = validates_length_rule errors, rule, body_length
+    validates_length new_errors, rest, body_length
+  end
+
+  defp validates_length(errors, _rules, _body_length), do: errors
+
+  # --
+
+  defp validates_length_rule(errors, %{value: value, op: op}, body_length) do
+    validates_length_rule errors, value, op, body_length
+  end
+
+  defp validates_length_rule(errors, value, "=", body_length) do
+    if body_length == value,
+      do: errors,
+      else: [%{rule: :length, expect: value, got: body_length, op: "="} | errors]
+  end
+
+  defp validates_length_rule(errors, value, "<", body_length) do
+    if body_length < value,
+      do: errors,
+      else: [%{rule: :length, expect: value, got: body_length, op: "<"} | errors]
+  end
+
+  defp validates_length_rule(errors, value, ">", body_length) do
+    if body_length > value,
+      do: errors,
+      else: [%{rule: :length, expect: value, got: body_length, op: ">"} | errors]
+  end
 end
