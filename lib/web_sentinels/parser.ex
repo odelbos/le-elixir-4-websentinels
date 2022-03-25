@@ -71,6 +71,7 @@ defmodule WebSentinels.Parser do
     %{status: status, max_duration: duration}
       |> parse_expects_length(expects)
       |> parse_expects_body(expects)
+      |> parse_expects_headers(expects)
   end
 
   defp parse_expects(%{"max_duration"=>duration} = _expects)
@@ -81,6 +82,7 @@ defmodule WebSentinels.Parser do
   defp parse_expects(%{"status"=>status} = expects) when is_integer(status) do
     %{status: status}
       |> parse_expects_length(expects)
+      |> parse_expects_headers(expects)
       |> parse_expects_body(expects)
   end
 
@@ -136,6 +138,43 @@ defmodule WebSentinels.Parser do
         parse_body_rules [%{value: value, op: op} | acc], rest
       _ ->
         halt_with_body_info()
+    end
+  end
+
+  # -----
+
+  defp parse_expects_headers(config, %{"headers" => rules}) do
+    headers_rules = parse_headers_rules [], rules
+    Map.put config, :headers, headers_rules
+  end
+
+  defp parse_expects_headers(config, _expects), do: config
+
+  # --
+
+  defp parse_headers_rules(acc, []), do: Enum.reverse acc
+
+  defp parse_headers_rules(acc, [rule | rest]) do
+    case rule do
+      %{"name"=>name, "op"=>"?"} ->
+        parse_headers_rules [%{name: name, op: "?"} | acc], rest
+
+      %{"name"=>name, "value"=>value, "op"=>"<"} ->
+        validates_integer value, "headers.value"
+        parse_headers_rules [%{name: name, value: value, op: "<"} | acc], rest
+
+      %{"name"=>name, "value"=>value, "op"=>">"} ->
+        validates_integer value, "headers.value"
+        parse_headers_rules [%{name: name, value: value, op: ">"} | acc], rest
+
+      %{"name"=>name, "value"=>value, "op"=>"c"} ->
+        validates_string value, "headers.value"
+        parse_headers_rules [%{name: name, value: value, op: "c"} | acc], rest
+
+      %{"name"=>name, "value"=>value, "op"=>"="} ->
+        parse_headers_rules [%{name: name, value: value, op: "="} | acc], rest
+      _ ->
+        halt_with_headers_info()
     end
   end
 
@@ -226,6 +265,18 @@ defmodule WebSentinels.Parser do
     IO.puts "> body rule must have a 'value' and 'op' attributes"
     IO.puts "> 'value' must be a string"
     IO.puts "> 'op' must be one of : c, =, md5"
+    nl()
+    System.halt 1
+  end
+
+  defp halt_with_headers_info() do
+    header "Error, bad headers rule", :red
+    nl()
+    IO.puts "> headers rule must have a 'name' and 'op' attributes"
+    IO.puts ">   'value' attribute depend on the 'op'"
+    IO.puts ">"
+    IO.puts "> if 'op' is the presence operaator, no 'value' attribute is required"
+    IO.puts "> for all other operators you need to provide a 'value' attribute"
     nl()
     System.halt 1
   end
