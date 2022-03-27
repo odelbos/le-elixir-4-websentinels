@@ -39,12 +39,12 @@ defmodule WebSentinels.Worker do
           Expectations.validates state[:expects], duration, status, body, headers
 
         if length(errors) == 0 do
-          Logger.info "#{worker_name state}: ok, #{duration}ms, url: #{url}"
+          Logger.info "#{worker_name state}: Ok, #{duration}ms, url: #{url}"
           #
           # TODO : log success
           #
         else
-          Logger.info "#{worker_name state}: expectations failed, #{duration}ms, url: #{url}"
+          Logger.info "#{worker_name state}: Expectations failed, #{duration}ms, url: #{url}"
           IO.inspect errors
           #
           # TODO : Send Pushover alert
@@ -57,7 +57,7 @@ defmodule WebSentinels.Worker do
         # TODO : Send Pushover alert
         #
       _ ->
-        Logger.warn "#{worker_name state}: unknown error, url: #{url}"
+        Logger.warn "#{worker_name state}: Unknown error, url: #{url}"
         #
         # TODO : Send Pushover alert
         #
