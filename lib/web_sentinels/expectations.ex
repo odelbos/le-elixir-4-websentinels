@@ -7,6 +7,7 @@ defmodule WebSentinels.Expectations do
       |> validates_max_duration(expects, duration)
       |> validates_length(expects, String.length body)
       |> validates_body(expects, body)
+      |> validates_headers(expects, headers)
   end
 
   # ------
@@ -104,5 +105,78 @@ defmodule WebSentinels.Expectations do
     if md5 == value,
       do: errors,
       else: [%{rule: :body, expect: value, got: md5, op: "md5"} | errors]
+  end
+
+  # ------
+
+  defp validates_headers(errors, %{headers: header_rules}, headers) do
+    validates_headers errors, header_rules, headers
+  end
+
+  defp validates_headers(errors, [], _headers), do: errors
+
+  defp validates_headers(errors, [rule | rest], headers) do
+    new_errors = validates_header_rule errors, rule, headers
+    validates_headers new_errors, rest, headers
+  end
+
+  defp validates_headers(errors, _rules, _headers), do: errors
+
+  # --
+
+  defp validates_header_rule(errors, %{name: name, value: value, op: op}, headers) do
+    case get_header headers, name do
+      [{_name, h_value}] ->
+        validates_header_rule errors, name, value, op, h_value
+      _ ->
+        [%{rule: :header, name: name, expect: value, got: :missing, op: op} | errors]
+    end
+  end
+
+  defp validates_header_rule(errors, %{name: name, op: "?"}, headers) do
+    case get_header headers, name do
+      [{_name, _h_value}] -> errors
+      _ -> [%{rule: :header, name: name, got: :missing, op: "?"} | errors]
+    end
+  end
+
+  # --
+
+  defp validates_header_rule(errors, name, value, "c", h_value)
+                when is_binary(value) do
+    if String.contains?(h_value, value),
+      do: errors,
+      else: [%{rule: :header, name: name, expect: value, got: h_value, op: "c"} | errors]
+  end
+
+  defp validates_header_rule(errors, name, value, "=", h_value)
+                when is_integer(value) and is_binary(h_value) do
+    validates_header_rule errors, name, value, "=", String.to_integer(h_value)
+  end
+
+  defp validates_header_rule(errors, name, value, "=", h_value) do
+    if h_value == value,
+      do: errors,
+      else: [%{rule: :header, name: name, expect: value, got: h_value, op: "="} | errors]
+  end
+
+  defp validates_header_rule(errors, name, value, ">", h_value) do
+    if String.to_integer(h_value) > value,
+      do: errors,
+      else: [%{rule: :header, name: name, expect: value, got: h_value, op: ">"} | errors]
+  end
+
+  defp validates_header_rule(errors, name, value, "<", h_value) do
+    if String.to_integer(h_value) < value,
+      do: errors,
+      else: [%{rule: :header, name: name, expect: value, got: h_value, op: "<"} | errors]
+  end
+
+  # -----
+
+  defp get_header(headers, name) do
+    Enum.filter headers, fn x ->
+      String.downcase(elem(x, 0)) == String.downcase(name)
+    end
   end
 end
