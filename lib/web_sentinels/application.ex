@@ -7,7 +7,8 @@ defmodule WebSentinels.Application do
   def start(_type, _args) do
     children = [
       {WebSentinels.Settings, []},
-      {WebSentinels.Scheduler, []}
+      {WebSentinels.Scheduler, []},
+      {WebSentinels.Pushover, []}
     ]
 
     opts = [strategy: :one_for_one, name: WebSentinels.Supervisor]
