@@ -3,6 +3,7 @@ defmodule WebSentinels.Worker do
   require Timer
   use GenServer
   alias WebSentinels.Expectations
+  alias WebSentinels.Pushover
 
   def start_link(state) do
     name = worker_name state
@@ -40,15 +41,9 @@ defmodule WebSentinels.Worker do
 
         if length(errors) == 0 do
           Logger.info "#{worker_name state}: Ok, #{duration}ms, url: #{url}"
-          #
-          # TODO : log success
-          #
         else
           Logger.info "#{worker_name state}: Expectations failed, #{duration}ms, url: #{url}"
-          IO.inspect errors
-          #
-          # TODO : Send Pushover alert
-          #
+          Pushover.push url, errors
         end
       {:error, %HTTPoison.Error{reason: reason}} ->
         # reason -> :nxdomain, :timeout
