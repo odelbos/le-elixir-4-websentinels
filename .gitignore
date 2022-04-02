@@ -27,6 +27,7 @@ web_sentinels-*.tar
 
 # Ignore sentinels config
 /config/sentinels.yml
+/config/pushover.yml
 
 # Ignore Working files
 OLD.*
